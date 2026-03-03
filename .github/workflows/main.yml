@@ -22,6 +22,9 @@ jobs:
   fmt:
     name: Rustfmt
     runs-on: ubuntu-latest
+    defaults: 
+      run: 
+        working-directory: server
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
@@ -33,6 +36,9 @@ jobs:
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
+    defaults: 
+      run: 
+        working-directory: server
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
@@ -45,6 +51,9 @@ jobs:
   coverage:
     name: Code coverage
     runs-on: ubuntu-latest
+    defaults: 
+      run: 
+        working-directory: server
     container:
       image: xd009642/tarpaulin
       options: --security-opt seccomp=unconfined
