@@ -9,14 +9,15 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    defaults: 
+      run: 
+        working-directory: server
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Run tests
-        run: 
-          cd server
-          cargo test
+        run: cargo test
 
   fmt:
     name: Rustfmt
@@ -27,9 +28,7 @@ jobs:
         with:
           components: rustfmt
       - name: Enforce formatting
-        run: 
-          cd server
-          cargo fmt --check
+        run: cargo fmt --check
 
   clippy:
     name: Clippy
@@ -41,9 +40,7 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@v2
       - name: Linting
-        run:
-          cd server
-          cargo clippy -- -D warnings
+        run: cargo clippy -- -D warnings
 
   coverage:
     name: Code coverage
@@ -55,7 +52,5 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Generate code coverage
-        run:
-            cd server
-            |
-            cargo tarpaulin --verbose --workspace
+        run: |
+          cargo tarpaulin --verbose --workspace
