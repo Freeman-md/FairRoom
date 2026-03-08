@@ -5,7 +5,7 @@ const NotFoundPage = () => {
     <div>
         <h1>404 - Not Found</h1>
         <p>The page you are looking for does not exist.</p>
-        <NavLink to="/dashboard">Go back to Dashboard</NavLink>
+        <NavLink to="/app/search">Go back to Dashboard</NavLink>
     </div>
   )
 }
