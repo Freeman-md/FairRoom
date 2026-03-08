@@ -1,7 +1,17 @@
+export interface TimeSlot {
+  time: string;
+  status: "available" | "reserved";
+}
+
 export interface Room {
   id: number;
   name: string;
   capacity: number;
+  location: string;
+  roomCode: string;
+  amenities: string[];
+  usageNotes: string;
+  slots: TimeSlot[];
 }
 
 export interface Booking {
