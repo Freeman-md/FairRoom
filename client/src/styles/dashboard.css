@@ -742,3 +742,402 @@ body {
 .dual-range-input::-moz-range-track {
   background: transparent;
 }
+
+.booking-reminder-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 8px 30px;
+}
+
+.booking-card {
+  width: 100%;
+  max-width: 760px;
+  background: #ffffff;
+  border: 1px solid #e8e8ef;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.booking-card-header {
+  background: #f3f1ff;
+  text-align: center;
+  padding: 26px 20px 22px;
+}
+
+.booking-bell {
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  margin: 0 auto 12px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  background: #e8e3ff;
+  color: #5b3df5;
+}
+
+.booking-card-header h1 {
+  margin: 0;
+  font-size: 42px;
+}
+
+.booking-card-header p {
+  margin: 8px 0 0;
+  color: #555a67;
+  font-size: 26px;
+}
+
+.booking-meta-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 18px 24px 8px;
+}
+
+.booking-meta-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.meta-icon {
+  font-size: 18px;
+  margin-top: 2px;
+}
+
+.booking-meta-item small {
+  display: block;
+  color: #808594;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+.booking-meta-item p {
+  margin: 2px 0 0;
+  font-weight: 600;
+}
+
+.checkin-box {
+  margin: 14px 24px;
+  background: #f8f8fb;
+  border: 1px solid #ececf2;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.checkin-box h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.checkin-box p {
+  margin: 0;
+  color: #4f5563;
+  line-height: 1.6;
+}
+
+.notification-history {
+  padding: 6px 24px 16px;
+}
+
+.notification-history h4 {
+  margin: 10px 0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: #5c6270;
+}
+
+.history-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.history-chip {
+  border: 1px solid #ececf2;
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: #fff;
+}
+
+.history-chip span {
+  font-weight: 600;
+}
+
+.history-chip small {
+  color: #7b8190;
+}
+
+.history-chip strong {
+  font-size: 12px;
+  color: #555a67;
+  background: #f5f6fa;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.history-note {
+  margin: 10px 0 0;
+  color: #7b8190;
+  font-size: 12px;
+  font-style: italic;
+}
+
+.booking-card-footer {
+  margin-top: 8px;
+  border-top: 2px solid #b8a8ff;
+  background: #fcfbff;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+}
+
+.booking-card-footer p {
+  margin: 0;
+  color: #525867;
+}
+
+.footer-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.booking-links {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.booking-links a {
+  color: #6a7080;
+  text-decoration: none;
+}
+
+.booking-links a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .booking-meta-row {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-card-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.account-health-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.account-health-header h1 {
+  margin: 0;
+}
+.account-health-header p {
+  margin: 4px 0 0;
+  color: #6f7583;
+}
+
+.standing-card {
+  border: 1px solid #e7e9f0;
+  border-radius: 12px;
+  background: #fff;
+  padding: 18px;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+
+.strike-meter {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.meter-bubble {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: #f1f2f7;
+  color: #444a58;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.meter-bubble.active {
+  background: #5b3df5;
+  color: #fff;
+}
+
+.standing-content h2 {
+  margin: 8px 0 4px;
+}
+.standing-content p {
+  margin: 0 0 8px;
+  color: #5f6573;
+}
+.standing-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #ede9ff;
+  color: #4b35d2;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.quick-action-card {
+  border: 1px solid #eceef4;
+  background: #fff;
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  justify-content: space-between;
+  text-decoration: none;
+  color: inherit;
+}
+
+.quick-action-card h3 {
+  margin: 0;
+}
+.quick-action-card p {
+  margin: 4px 0 0;
+  color: #6f7583;
+}
+
+.policy-section h2,
+.activity-section h2 {
+  margin: 0;
+}
+
+.policy-grid {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.policy-card {
+  border: 1px solid #eceef4;
+  border-radius: 10px;
+  background: #fff;
+  padding: 12px;
+}
+
+.policy-card h3 {
+  font-size: 13px;
+  margin: 0 0 8px;
+}
+.policy-card ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #565d6b;
+}
+
+.activity-head {
+  margin-top: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.link-btn {
+  border: none;
+  background: transparent;
+  color: #6168f6;
+  cursor: pointer;
+}
+
+.activity-list {
+  margin-top: 10px;
+  border: 1px solid #eceef4;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.activity-row {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f0f2f7;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.activity-row:last-child {
+  border-bottom: none;
+}
+
+.activity-row h4 {
+  margin: 0;
+}
+.activity-row p {
+  margin: 4px 0 0;
+  color: #66707f;
+}
+
+.activity-meta {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.status-tag {
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-tag.incident {
+  color: #d04343;
+  background: #ffeceb;
+}
+
+.status-tag.completed {
+  color: #277a49;
+  background: #eaf9f0;
+}
+
+@media (max-width: 900px) {
+  .quick-actions-grid,
+  .policy-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .standing-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .activity-row {
+    flex-direction: column;
+  }
+
+  .activity-meta {
+    text-align: left;
+    align-items: flex-start;
+  }
+}

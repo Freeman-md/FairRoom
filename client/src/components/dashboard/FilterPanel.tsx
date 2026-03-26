@@ -5,16 +5,8 @@ type FilterPanelProps = {
   onDateChange: (value: string) => void;
   minCapacity: number | null;
   onMinCapacityChange: (value: number) => void;
-
-  timeRange: { start: number; end: number } | null; // [start, end)
+  timeRange: { start: number; end: number } | null;
   onTimeRangeChange: (range: { start: number; end: number } | null) => void;
-
-  amenities: {
-    wifi: boolean;
-    projector: boolean;
-    whiteboard: boolean;
-  };
-  onAmenityChange: (key: "wifi" | "projector" | "whiteboard", checked: boolean) => void;
   onReset: () => void;
 };
 
@@ -34,8 +26,6 @@ function FilterPanel({
   onMinCapacityChange,
   timeRange,
   onTimeRangeChange,
-  amenities,
-  onAmenityChange,
   onReset,
 }: FilterPanelProps) {
   const start = timeRange?.start ?? 9;
@@ -121,44 +111,9 @@ function FilterPanel({
           <span>{toLabel(end === 24 ? 0 : end)}</span>
         </div>
 
-        <button
-          type="button"
-          className="clear-time-btn"
-          onClick={() => onTimeRangeChange(null)}
-        >
+        <button type="button" className="clear-time-btn" onClick={() => onTimeRangeChange(null)}>
           Clear time filter
         </button>
-      </section>
-
-      <section className="filter-section">
-        <h4>AMENITIES</h4>
-
-        <label className="check-row">
-          <input
-            type="checkbox"
-            checked={amenities.wifi}
-            onChange={(e) => onAmenityChange("wifi", e.target.checked)}
-          />
-          <span>High-speed Wifi</span>
-        </label>
-
-        <label className="check-row">
-          <input
-            type="checkbox"
-            checked={amenities.projector}
-            onChange={(e) => onAmenityChange("projector", e.target.checked)}
-          />
-          <span>Projector / Screen</span>
-        </label>
-
-        <label className="check-row">
-          <input
-            type="checkbox"
-            checked={amenities.whiteboard}
-            onChange={(e) => onAmenityChange("whiteboard", e.target.checked)}
-          />
-          <span>Whiteboard</span>
-        </label>
       </section>
     </aside>
   );
