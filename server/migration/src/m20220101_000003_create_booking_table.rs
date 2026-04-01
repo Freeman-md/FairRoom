@@ -58,6 +58,36 @@ impl MigrationTrait for Migration {
                 "#,
             )
             .await?;
+
+        // Populate the booking table
+        manager
+            .get_connection()
+            .execute_unprepared(
+                r#"
+INSERT INTO booking (id, user_id, room_name, time_slot)
+VALUES
+(
+  uuid_generate_v4(),
+  (SELECT id FROM "user" WHERE email = 'bob@example.com'),
+  'Room A',
+  tstzrange('2026-04-01 09:00', '2026-04-01 10:00')
+),
+(
+  uuid_generate_v4(),
+  (SELECT id FROM "user" WHERE email = 'charlie@example.com'),
+  'Room A',
+  tstzrange('2026-04-01 10:00', '2026-04-01 11:00')
+),
+(
+  uuid_generate_v4(),
+  (SELECT id FROM "user" WHERE email = 'bob@example.com'),
+  'Room B',
+  tstzrange('2026-04-01 11:00', '2026-04-01 13:00')
+);
+        "#,
+            )
+            .await?;
+
         Ok(())
     }
 
@@ -81,22 +111,10 @@ enum Booking {
 enum User {
     Table,
     Id,
-    Name,
-    Email,
-    Password,
-    Strikes,
-    Role,
-    Bookings,
-    CreatedAt,
 }
 
 #[derive(DeriveIden)]
 enum Room {
     Table,
-    Id,
     RoomName,
-    Location,
-    Capacity,
-    UsageNotes,
-    TimeSlots,
 }

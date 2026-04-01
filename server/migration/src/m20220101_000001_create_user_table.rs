@@ -33,11 +33,21 @@ impl MigrationTrait for Migration {
                             .enumeration(Role::RoleEnum, [Role::Admin, Role::Student])
                             .not_null(),
                     )
-                    .col(integer(User::Bookings).not_null())
                     .col(timestamp(User::CreatedAt).not_null())
                     .to_owned(),
             )
-            .await
+            .await?;
+
+        // Populate the user table
+        manager.get_connection().execute_unprepared(r#"
+        INSERT INTO "user" (id, full_name, email, password, strikes, role, bookings, created_at)
+        VALUES
+        (uuid_generate_v4(), 'Alice Admin', 'alice@example.com', 'hashed_pw_1', 0, 'admin', 0, NOW()),
+        (uuid_generate_v4(), 'Bob Student', 'bob@example.com', 'hashed_pw_2', 1, 'student', 2, NOW()),
+        (uuid_generate_v4(), 'Charlie Student', 'charlie@example.com', 'hashed_pw_3', 0, 'student', 1, NOW());
+        "#).await?;
+
+        Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
@@ -60,7 +70,6 @@ enum User {
     Password,
     Strikes,
     Role,
-    Bookings,
     CreatedAt,
 }
 
