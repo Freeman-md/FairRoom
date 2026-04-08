@@ -50,7 +50,4 @@ enum Reminder {
 enum Booking {
     Table,
     Id,
-    UserID,
-    RoomName,
-    TimeSlot,
 }

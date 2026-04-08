@@ -52,11 +52,4 @@ enum Strike {
 enum User {
     Table,
     Id,
-    FullName,
-    Email,
-    Password,
-    Strikes,
-    Role,
-    Bookings,
-    CreatedAt,
 }
