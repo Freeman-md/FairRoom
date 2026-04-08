@@ -12,10 +12,13 @@ impl MigrationTrait for Migration {
                     .table(Room::Table)
                     .if_not_exists()
                     .col(pk_uuid(Room::Id).not_null().primary_key())
-                    .col(string(Room::RoomName).not_null().unique_key())
+                    .col(string(Room::RoomCode).not_null().unique_key())
+                    .col(string(Room::Name).not_null())
                     .col(text(Room::Location).not_null())
                     .col(integer(Room::Capacity).not_null())
                     .col(text(Room::UsageNotes))
+                    .col(boolean(Room::IsActive).not_null().default(true))
+                    .col(timestamp(Room::CreatedAt).not_null())
                     .to_owned(),
             )
             .await?;
@@ -67,8 +70,11 @@ VALUES
 enum Room {
     Table,
     Id,
-    RoomName,
+    RoomCode,
+    Name,
     Location,
     Capacity,
     UsageNotes,
+    IsActive,
+    CreatedAt,
 }

@@ -70,8 +70,8 @@ enum User {
     FullName,
     Email,
     Password,
-    Strikes,
     Role,
+    Strikes,
     CreatedAt,
 }
 

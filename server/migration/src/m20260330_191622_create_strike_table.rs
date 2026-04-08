@@ -24,7 +24,7 @@ impl MigrationTrait for Migration {
                     .col(text(Strike::Reason).not_null())
                     .col(date_time(Strike::CreatedAt).not_null())
                     .col(date_time(Strike::RevokedAt))
-                    .col(uuid(Strike::GivenBy).not_null())
+                    .col(uuid(Strike::GivenBy))
                     .to_owned(),
             )
             .await
