@@ -10,13 +10,15 @@ async fn main() {
 
     let app = create_app(db);
 
-    let config = get_configuration().expect("Failed to read configuration");
+    // let config = get_configuration().expect("Failed to read configuration");
 
-    // run our app with hyper, listening globally on settings port
-    let address = format!(
-        "{}:{}",
-        config.server.address, config.server.application_port
-    );
+    let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
+
+    // run our app with listening globally on settings port
+    let address = format!("0.0.0.0:{}", port);
+
+    println!("{}", address);
+
     let listener = tokio::net::TcpListener::bind(address).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
