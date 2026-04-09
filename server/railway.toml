@@ -3,7 +3,3 @@ build = "nixpacks"
 
 [deploy]
 startCommand = "/target/release/fairroom"
-healthcheckPath = "/health_check"
-healthcheckTimeout = 30
-restartPolicyType = "on_failure"
-restartPolicyMaxRetries = 3
