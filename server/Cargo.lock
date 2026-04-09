@@ -1011,6 +1011,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "fairroom"
+version = "0.1.0"
+dependencies = [
+ "argon2",
+ "axum",
+ "chrono",
+ "config",
+ "jsonwebtoken",
+ "sea-orm",
+ "serde",
+ "tokio",
+ "tower",
+ "uuid",
+]
+
+[[package]]
 name = "fastrand"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2934,22 +2950,6 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
-]
-
-[[package]]
-name = "server"
-version = "0.1.0"
-dependencies = [
- "argon2",
- "axum",
- "chrono",
- "config",
- "jsonwebtoken",
- "sea-orm",
- "serde",
- "tokio",
- "tower",
- "uuid",
 ]
 
 [[package]]

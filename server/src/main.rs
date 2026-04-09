@@ -1,5 +1,5 @@
-use server::create_app;
-use server::{configuration::get_configuration, db::connect_db};
+use fairroom::create_app;
+use fairroom::{configuration::get_configuration, db::connect_db};
 
 #[tokio::main]
 async fn main() {
