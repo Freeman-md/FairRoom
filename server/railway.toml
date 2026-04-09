@@ -1,5 +1,5 @@
 [build]
-build = "nixpacks"
+builder = "nixpacks"
 
 [deploy]
-startCommand = "/target/release/fairroom"
+startCommand = "./target/release/fairroom"

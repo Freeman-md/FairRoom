@@ -1,5 +1,6 @@
-use axum::{Router, routing::{get, patch, post}};
+use axum::{Router, http::Method, routing::{get, patch, post}};
 use sea_orm::DatabaseConnection;
+use tower_http::cors::{Any, CorsLayer};
 
 pub mod configuration;
 pub mod db;
@@ -13,6 +14,11 @@ use routes::me::*;
 use routes::rooms::*;
 
 pub fn create_app(db: DatabaseConnection) -> Router {
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE, Method::OPTIONS])
+        .allow_headers(Any);
+
     Router::new()
         // ── Utility ───────────────────────────────────────────────────────────
         .route("/", get(root))
@@ -53,5 +59,6 @@ pub fn create_app(db: DatabaseConnection) -> Router {
         .route("/admin/rooms", get(admin_get_rooms).post(admin_create_room))
         .route("/admin/rooms/{room_id}", patch(admin_update_room))
 
+        .layer(cors)
         .with_state(db)
 }
