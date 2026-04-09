@@ -1,5 +1,6 @@
 use fairroom::create_app;
 use fairroom::{configuration::get_configuration, db::connect_db};
+use migration::{Migrator, MigratorTrait};
 
 #[tokio::main]
 async fn main() {
@@ -7,6 +8,11 @@ async fn main() {
         Ok(db) => db,
         Err(err) => panic!("{}", err),
     };
+
+    // Run all pending migrations before starting the server
+    Migrator::up(&db, None)
+        .await
+        .expect("Failed to run migrations");
 
     let app = create_app(db);
 
