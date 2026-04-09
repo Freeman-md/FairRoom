@@ -1,5 +1,5 @@
 pub mod configuration;
-pub mod models;
+pub mod entity;
 
 use axum::{
     Router,

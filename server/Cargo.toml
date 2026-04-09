@@ -14,7 +14,7 @@ name = "fairroom"
 axum = "0.8.8"
 chrono = { version = "0.4.42", features = ["serde"] }
 config = "0.15.22"
-sea-orm = { version = "2.0.0-rc", features = [ "sqlx-postgres", "runtime-async-std-native-tls", "macros" ] }
+sea-orm = { version = "2.0.0-rc", features = [ "sqlx-postgres", "runtime-async-std-native-tls", "mock" , "macros" ] }
 serde = { version = "1.0.228", features = ["derive"] }
 tokio = { version = "1.49.0", features = ["full"] }
 tower = { version = "0.5.3", features = ["util"] }
