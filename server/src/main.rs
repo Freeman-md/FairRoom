@@ -1,9 +1,14 @@
-use server::configuration::get_configuration;
 use server::create_app;
+use server::{configuration::get_configuration, db::connect_db};
 
 #[tokio::main]
 async fn main() {
-    let app = create_app();
+    let db = match connect_db().await {
+        Ok(db) => db,
+        Err(err) => panic!("{}", err),
+    };
+
+    let app = create_app(db);
 
     let config = get_configuration().expect("Failed to read configuration");
 
