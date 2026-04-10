@@ -14,6 +14,8 @@ export default function AccountStandingCard({
   standingLabel,
   standingMessage,
 }: AccountStandingCardProps) {
+  const strikeMarkers = Array.from({ length: maxStrikes }, (_, index) => index + 1);
+
   return (
     <section className="rounded-card border border-border bg-surface">
       <div className="grid gap-6 px-6 py-6 md:grid-cols-[190px_minmax(0,1fr)] md:items-center md:px-7 md:py-7">
@@ -22,12 +24,18 @@ export default function AccountStandingCard({
             <div className="flex size-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
               <ShieldAlert {...iconProps} aria-hidden="true" className="size-5" />
             </div>
-            <div className="flex size-11 items-center justify-center rounded-full bg-muted/70 text-sm font-semibold text-content">
-              2
-            </div>
-            <div className="flex size-11 items-center justify-center rounded-full bg-muted/70 text-sm font-semibold text-content">
-              3
-            </div>
+            {strikeMarkers.map((marker) => (
+              <div
+                key={marker}
+                className={
+                  marker <= strikeCount
+                    ? "flex size-11 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary"
+                    : "flex size-11 items-center justify-center rounded-full bg-muted/70 text-sm font-semibold text-content"
+                }
+              >
+                {marker}
+              </div>
+            ))}
           </div>
 
           <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
