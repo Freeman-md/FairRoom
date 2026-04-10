@@ -1,0 +1,61 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { useSearchRooms } from "@/features/search-rooms/hooks/useSearchRooms";
+import { fetchRooms } from "@/features/search-rooms/roomSearchService";
+
+vi.mock("@/features/search-rooms/roomSearchService", () => ({
+  fetchRooms: vi.fn(),
+}));
+
+describe("useSearchRooms", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("fetches rooms with the backend paging shape and refetches on page size change", async () => {
+    vi.mocked(fetchRooms).mockResolvedValue({
+      items: [
+        {
+          id: "room-1",
+          name: "Seminar Room A",
+          building: "Main Building",
+          floor: "2",
+          capacity: 12,
+          status: "operational",
+          usageNotes: "Quiet space",
+          amenities: [],
+        },
+      ],
+      page: 1,
+      pageSize: 12,
+      total: 1,
+    });
+
+    const { result } = renderHook(() => useSearchRooms());
+
+    await waitFor(() => {
+      expect(fetchRooms).toHaveBeenCalledWith(
+        expect.objectContaining({
+          page: 1,
+          pageSize: 12,
+        }),
+      );
+    });
+
+    expect(result.current.rooms).toHaveLength(1);
+    expect(result.current.totalPages).toBe(1);
+
+    act(() => {
+      result.current.setPageSize(24);
+    });
+
+    await waitFor(() => {
+      expect(fetchRooms).toHaveBeenCalledWith(
+        expect.objectContaining({
+          page: 1,
+          pageSize: 24,
+        }),
+      );
+    });
+  });
+});
