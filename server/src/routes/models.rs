@@ -41,7 +41,7 @@ pub fn api_error(status: StatusCode, code: &str, message: &str, details: Option<
 }
 
 pub fn internal_error(e: impl std::fmt::Display) -> ApiError {
-    let _ = e;
+    eprintln!("[internal_error] {e}");
     api_error(
         StatusCode::INTERNAL_SERVER_ERROR,
         "INTERNAL_SERVER_ERROR",
