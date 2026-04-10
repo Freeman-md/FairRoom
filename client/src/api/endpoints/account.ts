@@ -22,10 +22,14 @@ export async function getAccountStatus(): Promise<AccountStatusResponse> {
 }
 
 export async function getAccountActivities(): Promise<AccountActivityListResponse> {
-  const { data } = await apiClient.get<AccountActivityListResponse>("/me/account-activities", {
-    headers: authHeaders(),
-  });
-  return data;
+  try {
+    const { data } = await apiClient.get<AccountActivityListResponse>("/me/account-activities", {
+      headers: authHeaders(),
+    });
+    return data;
+  } catch (error: unknown) {
+    throw new Error(readApiErrorMessage(error, "Failed to load account activity."));
+  }
 }
 
 export async function getMyBookings(
@@ -33,23 +37,31 @@ export async function getMyBookings(
   page = 1,
   pageSize = 10,
 ): Promise<BookingListResponse> {
-  const { data } = await apiClient.get<BookingListResponse>("/me/bookings", {
-    headers: authHeaders(),
-    params: { scope, page, pageSize },
-  });
-  return data;
+  try {
+    const { data } = await apiClient.get<BookingListResponse>("/me/bookings", {
+      headers: authHeaders(),
+      params: { scope, page, pageSize },
+    });
+    return data;
+  } catch (error: unknown) {
+    throw new Error(readApiErrorMessage(error, "Failed to load bookings."));
+  }
 }
 
 export async function getMyReminders(
   params: ReminderQueryParams = {},
 ): Promise<ReminderListResponse> {
-  const { data } = await apiClient.get<ReminderListResponse>("/me/reminders", {
-    headers: authHeaders(),
-    params: {
-      ...(params.status ? { status: params.status } : {}),
-      ...(params.bookingId ? { bookingId: params.bookingId } : {}),
-      ...(params.pageSize ? { pageSize: params.pageSize } : {}),
-    },
-  });
-  return data;
+  try {
+    const { data } = await apiClient.get<ReminderListResponse>("/me/reminders", {
+      headers: authHeaders(),
+      params: {
+        ...(params.status ? { status: params.status } : {}),
+        ...(params.bookingId ? { bookingId: params.bookingId } : {}),
+        ...(params.pageSize ? { pageSize: params.pageSize } : {}),
+      },
+    });
+    return data;
+  } catch (error: unknown) {
+    throw new Error(readApiErrorMessage(error, "Failed to load reminders."));
+  }
 }
