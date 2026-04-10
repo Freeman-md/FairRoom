@@ -80,7 +80,9 @@ pub async fn get_my_bookings(
         .filter(booking::Column::UserId.eq(auth.user_id));
 
     match params.scope.as_deref().unwrap_or("all") {
-        "active" => query = query.filter(booking::Column::EndsAt.gt(now)),
+        "active" => query = query
+            .filter(booking::Column::Status.eq(crate::entity::sea_orm_active_enums::StatusEnum::Active))
+            .filter(booking::Column::EndsAt.gt(now)),
         "past"   => query = query.filter(booking::Column::EndsAt.lte(now)),
         _        => {}
     }
