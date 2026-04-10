@@ -56,6 +56,12 @@ export interface AdminBookingQueryParams {
   pageSize?: number;
 }
 
+export interface AdminRoomUsageQueryParams {
+  groupBy?: string;
+  startsAt?: string;
+  endsAt?: string;
+}
+
 export interface AdminRoomQueryParams {
   status?: RoomStatus;
 }

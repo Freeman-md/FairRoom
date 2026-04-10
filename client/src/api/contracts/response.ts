@@ -82,6 +82,20 @@ export interface AdminBookingListResponse {
   total: number;
 }
 
+export interface AdminRoomUsageItem {
+  key: string;
+  totalBookings: number;
+  totalHours: number;
+  noShowCount: number;
+}
+
+export interface AdminRoomUsageResponse {
+  groupBy: string;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  items: AdminRoomUsageItem[];
+}
+
 export interface AdminUserItem {
   id: string;
   fullName: string;
