@@ -53,7 +53,7 @@ export default function BookingListItem({ booking, onUpdated }: BookingListItemP
 
   return (
     <>
-      <article className="flex items-center gap-4 py-4">
+      <article className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:gap-4">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-card bg-surface text-muted-foreground">
           <Calendar {...iconProps} aria-hidden="true" />
         </div>
@@ -81,7 +81,7 @@ export default function BookingListItem({ booking, onUpdated }: BookingListItemP
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex w-full shrink-0 flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
           {booking.canEdit && (
             <Button
               type="button"
