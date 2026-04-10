@@ -28,8 +28,12 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y ca-certificates libssl3 && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder */target/release/fairroom ./fairroom
-COPY --from=builder */settings ./settings
+RUN pwd
+
+RUN ls app
+
+COPY --from=builder /app/target/release/fairroom ./fairroom
+COPY --from=builder /app/settings ./settings
 
 ENV PORT=3000
 
