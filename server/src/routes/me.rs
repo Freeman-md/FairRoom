@@ -71,8 +71,8 @@ pub async fn get_my_bookings(
     State(db): State<DatabaseConnection>,
     auth: AuthUser,
     Query(params): Query<MyBookingQuery>,
-) -> ApiResult<Json<Vec<BookingResponse>>> {
-    let page = params.page.unwrap_or(1).saturating_sub(1);
+) -> ApiResult<Json<BookingListResponse>> {
+    let page_num = params.page.unwrap_or(1).max(1);
     let page_size = params.page_size.unwrap_or(DEFAULT_PAGE_SIZE);
     let now = Utc::now().naive_utc();
 
@@ -85,12 +85,12 @@ pub async fn get_my_bookings(
         _        => {}
     }
 
-    let bookings = query
+    let paginator = query
         .order_by_desc(booking::Column::StartsAt)
-        .paginate(&db, page_size)
-        .fetch_page(page)
-        .await
-        .map_err(internal_error)?;
+        .paginate(&db, page_size);
+
+    let total = paginator.num_items().await.map_err(internal_error)?;
+    let bookings = paginator.fetch_page(page_num - 1).await.map_err(internal_error)?;
 
     // Batch-fetch rooms so we can embed roomCode + roomName
     let room_ids: Vec<Uuid> = bookings.iter().map(|b| b.room_id).collect();
@@ -122,7 +122,7 @@ pub async fn get_my_bookings(
         })
         .collect();
 
-    Ok(Json(items))
+    Ok(Json(BookingListResponse { items, page: page_num, page_size, total }))
 }
 
 pub async fn get_my_reminders(

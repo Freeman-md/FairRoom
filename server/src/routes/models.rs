@@ -176,6 +176,16 @@ pub struct CancelBookingRequest {
 
 // ── Booking responses ─────────────────────────────────────────────────────────
 
+/// Paginated list of bookings (GET /me/bookings)
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BookingListResponse {
+    pub items: Vec<BookingResponse>,
+    pub page: u64,
+    pub page_size: u64,
+    pub total: u64,
+}
+
 /// Used for list + mutating endpoints (POST, PATCH, cancel).
 /// Embeds roomCode and roomName so the client doesn't need a second request.
 #[derive(Serialize)]
