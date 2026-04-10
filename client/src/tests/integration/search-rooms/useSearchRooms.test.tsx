@@ -42,8 +42,10 @@ describe("useSearchRooms", () => {
       );
     });
 
-    expect(result.current.rooms).toHaveLength(1);
-    expect(result.current.totalPages).toBe(1);
+    await waitFor(() => {
+      expect(result.current.rooms).toHaveLength(1);
+      expect(result.current.totalPages).toBe(1);
+    });
 
     act(() => {
       result.current.setPageSize(24);
