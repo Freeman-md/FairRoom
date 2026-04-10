@@ -30,6 +30,15 @@ export interface CreateBookingRequest {
   expectedAttendees: number;
 }
 
+export interface UpdateBookingRequest {
+  startsAt?: string;
+  endsAt?: string;
+}
+
+export interface CancelBookingRequest {
+  reason?: string;
+}
+
 export interface ReminderQueryParams {
   status?: ReminderStatus;
   bookingId?: string;
