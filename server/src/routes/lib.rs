@@ -1,4 +1,4 @@
-use axum::{Router, routing::{get, patch, post}};
+use axum::{Router, routing::{delete, get, patch, post, put}};
 use sea_orm::DatabaseConnection;
 
 pub mod configuration;
@@ -52,6 +52,15 @@ pub fn create_app(db: DatabaseConnection) -> Router {
         // ── Admin: rooms ──────────────────────────────────────────────────────
         .route("/admin/rooms", get(admin_get_rooms).post(admin_create_room))
         .route("/admin/rooms/:room_id", patch(admin_update_room))
+        .route("/admin/rooms/:room_id/amenities", put(admin_set_room_amenities))
+        .route("/admin/rooms/:room_id/amenities/:amenity_id", delete(admin_delete_room_amenity))
+
+        // ── Admin: amenities ──────────────────────────────────────────────────
+        .route("/admin/amenities", get(admin_get_amenities).post(admin_create_amenity))
+        .route("/admin/amenities/:amenity_id", delete(admin_delete_amenity))
+
+        // ── Admin: analytics ──────────────────────────────────────────────────
+        .route("/admin/analytics/room-usage", get(admin_get_room_usage))
 
         .with_state(db)
 }

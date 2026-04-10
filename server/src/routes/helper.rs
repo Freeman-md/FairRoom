@@ -25,7 +25,6 @@ pub fn generate_jwt(user_id: &str, email: &str, role: &str) -> String {
     .unwrap()
 }
 
-/// Shared helper: converts a RoleEnum to its string representation.
 pub fn role_to_str(role: &crate::entity::sea_orm_active_enums::RoleEnum) -> String {
     use crate::entity::sea_orm_active_enums::RoleEnum;
     match role {
@@ -34,14 +33,24 @@ pub fn role_to_str(role: &crate::entity::sea_orm_active_enums::RoleEnum) -> Stri
     }
 }
 
-/// Shared helper: maps a user Model into the API response shape.
+/// Maps a user Model into the API UserProfile shape (no strikes field).
 pub fn user_to_response(user: &crate::entity::user::Model) -> super::models::UserResponse {
     super::models::UserResponse {
         id: user.id.to_string(),
         full_name: user.full_name.clone(),
         email: user.email.clone(),
         role: role_to_str(&user.role),
-        strikes: user.strikes,
         created_at: user.created_at.and_utc().to_rfc3339(),
+    }
+}
+
+/// Converts a booking StatusEnum to its canonical string value.
+pub fn status_to_str(status: &crate::entity::sea_orm_active_enums::StatusEnum) -> &'static str {
+    use crate::entity::sea_orm_active_enums::StatusEnum;
+    match status {
+        StatusEnum::Active => "active",
+        StatusEnum::Cancelled => "cancelled",
+        StatusEnum::Completed => "completed",
+        StatusEnum::NoShow => "no_show",
     }
 }

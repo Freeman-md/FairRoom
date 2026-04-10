@@ -2,9 +2,11 @@
 
 pub mod prelude;
 
+pub mod amenity;
 pub mod booking;
 pub mod reminder;
 pub mod room;
+pub mod room_amenity;
 pub mod room_time_slots;
 pub mod sea_orm_active_enums;
 pub mod strike;

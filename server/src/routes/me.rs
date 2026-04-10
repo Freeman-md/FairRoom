@@ -5,27 +5,34 @@ use axum::{
 };
 use chrono::Utc;
 use sea_orm::{
-    ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect,
-    PaginatorTrait,
+    ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait,
+    QueryFilter, QueryOrder, QuerySelect,
 };
+use std::collections::HashMap;
+use uuid::Uuid;
 
 use crate::entity::*;
-use crate::routes::helper::user_to_response;
+use crate::routes::helper::{status_to_str, user_to_response};
 use crate::routes::models::*;
 
 const DEFAULT_PAGE_SIZE: u64 = 20;
-/// Users with this many (or more) active strikes are suspended.
-pub const SUSPENSION_THRESHOLD: i32 = 3;
+pub const SUSPENSION_THRESHOLD: i64 = 3;
+
+fn derive_account_state(active_strikes: i64) -> &'static str {
+    if active_strikes >= 3 { "restricted" }
+    else if active_strikes == 2 { "warned" }
+    else { "good" }
+}
 
 pub async fn get_me(
     State(db): State<DatabaseConnection>,
     auth: AuthUser,
-) -> Result<Json<UserResponse>, (StatusCode, String)> {
+) -> ApiResult<Json<UserResponse>> {
     let user = user::Entity::find_by_id(auth.user_id)
         .one(&db)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-        .ok_or((StatusCode::NOT_FOUND, "User not found".into()))?;
+        .map_err(internal_error)?
+        .ok_or_else(|| api_error(StatusCode::NOT_FOUND, "USER_NOT_FOUND", "User not found.", None))?;
 
     Ok(Json(user_to_response(&user)))
 }
@@ -33,24 +40,23 @@ pub async fn get_me(
 pub async fn get_account_status(
     State(db): State<DatabaseConnection>,
     auth: AuthUser,
-) -> Result<Json<AccountStatusResponse>, (StatusCode, String)> {
-    let user = user::Entity::find_by_id(auth.user_id)
-        .one(&db)
+) -> ApiResult<Json<AccountStatusResponse>> {
+    // Derive active strikes from the strike table (where revokedAt IS NULL)
+    // rather than using the denormalised counter on the user row.
+    let active_strikes = strike::Entity::find()
+        .filter(strike::Column::UserId.eq(auth.user_id))
+        .filter(strike::Column::RevokedAt.is_null())
+        .count(&db)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-        .ok_or((StatusCode::NOT_FOUND, "User not found".into()))?;
+        .map_err(internal_error)? as i64;
 
-    let suspended = user.strikes >= SUSPENSION_THRESHOLD;
+    let account_state = derive_account_state(active_strikes).to_string();
+    let booking_eligible = active_strikes < SUSPENSION_THRESHOLD;
 
     Ok(Json(AccountStatusResponse {
-        strikes: user.strikes,
-        suspended,
-        suspension_reason: suspended.then(|| {
-            format!(
-                "Account suspended: {} strikes (limit is {})",
-                user.strikes, SUSPENSION_THRESHOLD
-            )
-        }),
+        active_strikes,
+        booking_eligible,
+        account_state,
     }))
 }
 
@@ -58,7 +64,6 @@ pub async fn get_account_activities(
     _state: State<DatabaseConnection>,
     _auth: AuthUser,
 ) -> Json<Vec<String>> {
-    // Account activity tracking is not yet implemented in the schema.
     Json(vec![])
 }
 
@@ -66,8 +71,7 @@ pub async fn get_my_bookings(
     State(db): State<DatabaseConnection>,
     auth: AuthUser,
     Query(params): Query<MyBookingQuery>,
-) -> Result<Json<Vec<booking::Model>>, (StatusCode, String)> {
-    // Pages are 1-indexed in the API; SeaORM uses 0-indexed internally.
+) -> ApiResult<Json<Vec<BookingResponse>>> {
     let page = params.page.unwrap_or(1).saturating_sub(1);
     let page_size = params.page_size.unwrap_or(DEFAULT_PAGE_SIZE);
     let now = Utc::now().naive_utc();
@@ -78,7 +82,7 @@ pub async fn get_my_bookings(
     match params.scope.as_deref().unwrap_or("all") {
         "active" => query = query.filter(booking::Column::EndsAt.gt(now)),
         "past"   => query = query.filter(booking::Column::EndsAt.lte(now)),
-        _        => {} // "all" — no extra filter
+        _        => {}
     }
 
     let bookings = query
@@ -86,25 +90,53 @@ pub async fn get_my_bookings(
         .paginate(&db, page_size)
         .fetch_page(page)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(internal_error)?;
 
-    Ok(Json(bookings))
+    // Batch-fetch rooms so we can embed roomCode + roomName
+    let room_ids: Vec<Uuid> = bookings.iter().map(|b| b.room_id).collect();
+    let rooms: HashMap<Uuid, room::Model> = room::Entity::find()
+        .filter(room::Column::Id.is_in(room_ids))
+        .all(&db)
+        .await
+        .map_err(internal_error)?
+        .into_iter()
+        .map(|r| (r.id, r))
+        .collect();
+
+    let items = bookings
+        .into_iter()
+        .filter_map(|b| {
+            let room = rooms.get(&b.room_id)?;
+            Some(BookingResponse {
+                id: b.id.to_string(),
+                room_id: b.room_id.to_string(),
+                room_code: room.room_code.clone(),
+                room_name: room.room_name.clone(),
+                starts_at: b.starts_at.and_utc().to_rfc3339(),
+                ends_at: b.ends_at.and_utc().to_rfc3339(),
+                status: status_to_str(&b.status).to_string(),
+                checked_in: b.checked_in,
+                created_at: b.created_at.and_utc().to_rfc3339(),
+                updated_at: b.updated_at.and_utc().to_rfc3339(),
+            })
+        })
+        .collect();
+
+    Ok(Json(items))
 }
 
 pub async fn get_my_reminders(
     State(db): State<DatabaseConnection>,
     auth: AuthUser,
     Query(params): Query<ReminderQuery>,
-) -> Result<Json<Vec<reminder::Model>>, (StatusCode, String)> {
+) -> ApiResult<Json<Vec<reminder::Model>>> {
     let limit = params.page_size.unwrap_or(DEFAULT_PAGE_SIZE);
 
-    // Collect this user's booking IDs so we can filter reminders by them.
-    // (reminder table has no direct user_id column)
-    let booking_ids: Vec<uuid::Uuid> = booking::Entity::find()
+    let booking_ids: Vec<Uuid> = booking::Entity::find()
         .filter(booking::Column::UserId.eq(auth.user_id))
         .all(&db)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .map_err(internal_error)?
         .into_iter()
         .map(|b| b.id)
         .collect();
@@ -130,7 +162,7 @@ pub async fn get_my_reminders(
         .limit(limit)
         .all(&db)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(internal_error)?;
 
     Ok(Json(reminders))
 }

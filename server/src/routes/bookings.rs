@@ -4,45 +4,76 @@ use axum::{
     http::StatusCode,
 };
 use chrono::Utc;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
-use sea_orm::ExprTrait;
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, ExprTrait, PaginatorTrait, QueryFilter, Set};
 use uuid::Uuid;
 
 use crate::entity::sea_orm_active_enums::StatusEnum;
 use crate::entity::*;
+use crate::routes::helper::status_to_str;
 use crate::routes::me::SUSPENSION_THRESHOLD;
 use crate::routes::models::*;
+
+fn booking_response(b: &booking::Model, room: &room::Model) -> BookingResponse {
+    BookingResponse {
+        id: b.id.to_string(),
+        room_id: b.room_id.to_string(),
+        room_code: room.room_code.clone(),
+        room_name: room.room_name.clone(),
+        starts_at: b.starts_at.and_utc().to_rfc3339(),
+        ends_at: b.ends_at.and_utc().to_rfc3339(),
+        status: status_to_str(&b.status).to_string(),
+        checked_in: b.checked_in,
+        created_at: b.created_at.and_utc().to_rfc3339(),
+        updated_at: b.updated_at.and_utc().to_rfc3339(),
+    }
+}
 
 pub async fn create_booking(
     State(db): State<DatabaseConnection>,
     auth: AuthUser,
     Json(payload): Json<CreateBookingRequest>,
-) -> Result<Json<booking::Model>, (StatusCode, String)> {
+) -> ApiResult<(StatusCode, Json<BookingResponse>)> {
     // ── Validation ────────────────────────────────────────────────────────────
     if payload.starts_at >= payload.ends_at {
-        return Err((StatusCode::BAD_REQUEST, "startsAt must be before endsAt".into()));
+        return Err(api_error(
+            StatusCode::BAD_REQUEST,
+            "VALIDATION_ERROR",
+            "Request validation failed.",
+            Some(serde_json::json!({ "field": "endsAt", "reason": "endsAt must be later than startsAt" })),
+        ));
     }
     if payload.purpose.trim().is_empty() {
-        return Err((StatusCode::BAD_REQUEST, "purpose is required".into()));
+        return Err(api_error(
+            StatusCode::BAD_REQUEST,
+            "VALIDATION_ERROR",
+            "Request validation failed.",
+            Some(serde_json::json!({ "field": "purpose", "reason": "purpose is required" })),
+        ));
     }
     if payload.expected_attendees < 1 {
-        return Err((StatusCode::BAD_REQUEST, "expectedAttendees must be at least 1".into()));
+        return Err(api_error(
+            StatusCode::BAD_REQUEST,
+            "VALIDATION_ERROR",
+            "Request validation failed.",
+            Some(serde_json::json!({ "field": "expectedAttendees", "reason": "expectedAttendees must be at least 1" })),
+        ));
     }
 
     // ── Account-status check ──────────────────────────────────────────────────
-    let user = user::Entity::find_by_id(auth.user_id)
-        .one(&db)
+    let active_strikes = strike::Entity::find()
+        .filter(strike::Column::UserId.eq(auth.user_id))
+        .filter(strike::Column::RevokedAt.is_null())
+        .count(&db)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-        .ok_or((StatusCode::NOT_FOUND, "User not found".into()))?;
+        .map_err(internal_error)? as i64;
 
-    if user.strikes >= SUSPENSION_THRESHOLD {
-        return Err((
+    if active_strikes >= SUSPENSION_THRESHOLD {
+        let account_state = if active_strikes >= 3 { "restricted" } else { "warned" };
+        return Err(api_error(
             StatusCode::FORBIDDEN,
-            format!(
-                "Account suspended ({} strikes). Bookings are disabled.",
-                user.strikes
-            ),
+            "BOOKING_RESTRICTED",
+            "You cannot create a new booking because your account is restricted.",
+            Some(serde_json::json!({ "activeStrikes": active_strikes, "accountState": account_state })),
         ));
     }
 
@@ -50,19 +81,21 @@ pub async fn create_booking(
     let room = room::Entity::find_by_id(payload.room_id)
         .one(&db)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-        .ok_or((StatusCode::NOT_FOUND, "Room not found".into()))?;
+        .map_err(internal_error)?
+        .ok_or_else(|| api_error(StatusCode::NOT_FOUND, "ROOM_NOT_FOUND", "The requested room could not be found.", None))?;
 
-    if !room.is_active {
-        return Err((StatusCode::BAD_REQUEST, "Room is not active".into()));
+    if room.status != "operational" {
+        return Err(api_error(StatusCode::BAD_REQUEST, "ROOM_UNAVAILABLE", "This room is not currently available for booking.", None));
     }
     if payload.expected_attendees > room.capacity {
-        return Err((
+        return Err(api_error(
             StatusCode::BAD_REQUEST,
-            format!(
-                "Expected attendees ({}) exceed room capacity ({})",
-                payload.expected_attendees, room.capacity
-            ),
+            "VALIDATION_ERROR",
+            "Request validation failed.",
+            Some(serde_json::json!({
+                "field": "expectedAttendees",
+                "reason": format!("Expected attendees ({}) exceed room capacity ({})", payload.expected_attendees, room.capacity)
+            })),
         ));
     }
 
@@ -77,10 +110,19 @@ pub async fn create_booking(
         )
         .one(&db)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(internal_error)?;
 
     if overlap.is_some() {
-        return Err((StatusCode::CONFLICT, "This time slot is already booked".into()));
+        return Err(api_error(
+            StatusCode::CONFLICT,
+            "BOOKING_CONFLICT",
+            "The selected time range overlaps an existing active booking.",
+            Some(serde_json::json!({
+                "roomId": payload.room_id.to_string(),
+                "startsAt": payload.starts_at.and_utc().to_rfc3339(),
+                "endsAt": payload.ends_at.and_utc().to_rfc3339()
+            })),
+        ));
     }
 
     // ── Create ────────────────────────────────────────────────────────────────
@@ -98,31 +140,57 @@ pub async fn create_booking(
         ..Default::default()
     };
 
-    let booking = new_booking
-        .insert(&db)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    Ok(Json(booking))
+    let b = new_booking.insert(&db).await.map_err(internal_error)?;
+    Ok((StatusCode::CREATED, Json(booking_response(&b, &room))))
 }
 
 pub async fn get_booking(
     State(db): State<DatabaseConnection>,
     auth: AuthUser,
     Path(booking_id): Path<Uuid>,
-) -> Result<Json<booking::Model>, (StatusCode, String)> {
-    let booking = booking::Entity::find_by_id(booking_id)
+) -> ApiResult<Json<BookingDetailResponse>> {
+    let b = booking::Entity::find_by_id(booking_id)
         .one(&db)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-        .ok_or((StatusCode::NOT_FOUND, "Booking not found".into()))?;
+        .map_err(internal_error)?
+        .ok_or_else(|| api_error(StatusCode::NOT_FOUND, "BOOKING_NOT_FOUND", "The requested booking could not be found.", None))?;
 
-    // Only the owner or an admin may view a booking
-    if booking.user_id != auth.user_id && auth.role != "admin" {
-        return Err((StatusCode::FORBIDDEN, "Access denied".into()));
+    if b.user_id != auth.user_id && auth.role != "admin" {
+        return Err(api_error(StatusCode::FORBIDDEN, "FORBIDDEN", "You do not have permission to access this booking.", None));
     }
 
-    Ok(Json(booking))
+    let user = user::Entity::find_by_id(b.user_id)
+        .one(&db)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| api_error(StatusCode::NOT_FOUND, "USER_NOT_FOUND", "User not found.", None))?;
+
+    let room = room::Entity::find_by_id(b.room_id)
+        .one(&db)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| api_error(StatusCode::NOT_FOUND, "ROOM_NOT_FOUND", "The requested room could not be found.", None))?;
+
+    Ok(Json(BookingDetailResponse {
+        id: b.id.to_string(),
+        user: BookingDetailUser {
+            id: user.id.to_string(),
+            full_name: user.full_name,
+            email: user.email,
+        },
+        room: BookingDetailRoom {
+            id: room.id.to_string(),
+            room_code: room.room_code,
+            name: room.room_name,
+            location: room.location,
+        },
+        starts_at: b.starts_at.and_utc().to_rfc3339(),
+        ends_at: b.ends_at.and_utc().to_rfc3339(),
+        status: status_to_str(&b.status).to_string(),
+        checked_in: b.checked_in,
+        created_at: b.created_at.and_utc().to_rfc3339(),
+        updated_at: b.updated_at.and_utc().to_rfc3339(),
+    }))
 }
 
 pub async fn update_booking(
@@ -130,34 +198,37 @@ pub async fn update_booking(
     auth: AuthUser,
     Path(booking_id): Path<Uuid>,
     Json(payload): Json<UpdateBookingRequest>,
-) -> Result<Json<booking::Model>, (StatusCode, String)> {
-    let booking = booking::Entity::find_by_id(booking_id)
+) -> ApiResult<Json<BookingResponse>> {
+    let b = booking::Entity::find_by_id(booking_id)
         .one(&db)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-        .ok_or((StatusCode::NOT_FOUND, "Booking not found".into()))?;
+        .map_err(internal_error)?
+        .ok_or_else(|| api_error(StatusCode::NOT_FOUND, "BOOKING_NOT_FOUND", "The requested booking could not be found.", None))?;
 
-    // ── Ownership ─────────────────────────────────────────────────────────────
-    if booking.user_id != auth.user_id {
-        return Err((StatusCode::FORBIDDEN, "You do not own this booking".into()));
+    if b.user_id != auth.user_id {
+        return Err(api_error(StatusCode::FORBIDDEN, "FORBIDDEN", "You do not have permission to modify this booking.", None));
     }
 
-    // ── Deadline: booking must not have started yet ───────────────────────────
     let now = Utc::now().naive_utc();
-    if booking.starts_at <= now {
-        return Err((StatusCode::BAD_REQUEST, "Cannot edit a booking that has already started".into()));
+    if b.starts_at <= now {
+        return Err(api_error(
+            StatusCode::BAD_REQUEST, "VALIDATION_ERROR", "Request validation failed.",
+            Some(serde_json::json!({ "field": "startsAt", "reason": "Cannot edit a booking that has already started" })),
+        ));
     }
 
-    let new_starts_at = payload.starts_at.unwrap_or(booking.starts_at);
-    let new_ends_at = payload.ends_at.unwrap_or(booking.ends_at);
+    let new_starts_at = payload.starts_at.unwrap_or(b.starts_at);
+    let new_ends_at = payload.ends_at.unwrap_or(b.ends_at);
 
     if new_starts_at >= new_ends_at {
-        return Err((StatusCode::BAD_REQUEST, "startsAt must be before endsAt".into()));
+        return Err(api_error(
+            StatusCode::BAD_REQUEST, "VALIDATION_ERROR", "Request validation failed.",
+            Some(serde_json::json!({ "field": "endsAt", "reason": "endsAt must be later than startsAt" })),
+        ));
     }
 
-    // ── Conflict check (exclude this booking itself) ──────────────────────────
     let overlap = booking::Entity::find()
-        .filter(booking::Column::RoomId.eq(booking.room_id))
+        .filter(booking::Column::RoomId.eq(b.room_id))
         .filter(booking::Column::Id.ne(booking_id))
         .filter(booking::Column::Status.eq(StatusEnum::Active))
         .filter(
@@ -167,23 +238,34 @@ pub async fn update_booking(
         )
         .one(&db)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(internal_error)?;
 
     if overlap.is_some() {
-        return Err((StatusCode::CONFLICT, "New time slot conflicts with an existing booking".into()));
+        return Err(api_error(
+            StatusCode::CONFLICT, "BOOKING_CONFLICT",
+            "The selected time range overlaps an existing active booking.",
+            Some(serde_json::json!({
+                "roomId": b.room_id.to_string(),
+                "startsAt": new_starts_at.and_utc().to_rfc3339(),
+                "endsAt": new_ends_at.and_utc().to_rfc3339()
+            })),
+        ));
     }
 
-    let mut active: booking::ActiveModel = booking.into();
+    let room_id = b.room_id;
+    let mut active: booking::ActiveModel = b.into();
     active.starts_at = Set(new_starts_at);
     active.ends_at = Set(new_ends_at);
     active.updated_at = Set(now);
+    let updated = active.update(&db).await.map_err(internal_error)?;
 
-    let updated = active
-        .update(&db)
+    let room = room::Entity::find_by_id(room_id)
+        .one(&db)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(internal_error)?
+        .ok_or_else(|| api_error(StatusCode::NOT_FOUND, "ROOM_NOT_FOUND", "The requested room could not be found.", None))?;
 
-    Ok(Json(updated))
+    Ok(Json(booking_response(&updated, &room)))
 }
 
 pub async fn cancel_booking(
@@ -191,36 +273,43 @@ pub async fn cancel_booking(
     auth: AuthUser,
     Path(booking_id): Path<Uuid>,
     Json(_payload): Json<CancelBookingRequest>,
-) -> Result<Json<booking::Model>, (StatusCode, String)> {
-    let booking = booking::Entity::find_by_id(booking_id)
+) -> ApiResult<Json<BookingResponse>> {
+    let b = booking::Entity::find_by_id(booking_id)
         .one(&db)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-        .ok_or((StatusCode::NOT_FOUND, "Booking not found".into()))?;
+        .map_err(internal_error)?
+        .ok_or_else(|| api_error(StatusCode::NOT_FOUND, "BOOKING_NOT_FOUND", "The requested booking could not be found.", None))?;
 
-    // ── Ownership ─────────────────────────────────────────────────────────────
-    if booking.user_id != auth.user_id {
-        return Err((StatusCode::FORBIDDEN, "You do not own this booking".into()));
+    if b.user_id != auth.user_id {
+        return Err(api_error(StatusCode::FORBIDDEN, "FORBIDDEN", "You do not have permission to cancel this booking.", None));
     }
 
-    // ── Deadline ──────────────────────────────────────────────────────────────
     let now = Utc::now().naive_utc();
-    if booking.starts_at <= now {
-        return Err((StatusCode::BAD_REQUEST, "Cannot cancel a booking that has already started".into()));
+    if b.starts_at <= now {
+        return Err(api_error(
+            StatusCode::BAD_REQUEST, "VALIDATION_ERROR", "Request validation failed.",
+            Some(serde_json::json!({ "field": "startsAt", "reason": "Cannot cancel a booking that has already started" })),
+        ));
     }
 
-    if booking.status != StatusEnum::Active {
-        return Err((StatusCode::BAD_REQUEST, "Only active bookings can be cancelled".into()));
+    if b.status != StatusEnum::Active {
+        return Err(api_error(
+            StatusCode::BAD_REQUEST, "VALIDATION_ERROR", "Request validation failed.",
+            Some(serde_json::json!({ "field": "status", "reason": "Only active bookings can be cancelled" })),
+        ));
     }
 
-    let mut active: booking::ActiveModel = booking.into();
+    let room_id = b.room_id;
+    let mut active: booking::ActiveModel = b.into();
     active.status = Set(StatusEnum::Cancelled);
     active.updated_at = Set(now);
+    let updated = active.update(&db).await.map_err(internal_error)?;
 
-    let updated = active
-        .update(&db)
+    let room = room::Entity::find_by_id(room_id)
+        .one(&db)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(internal_error)?
+        .ok_or_else(|| api_error(StatusCode::NOT_FOUND, "ROOM_NOT_FOUND", "The requested room could not be found.", None))?;
 
-    Ok(Json(updated))
+    Ok(Json(booking_response(&updated, &room)))
 }

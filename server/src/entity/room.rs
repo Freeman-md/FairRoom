@@ -17,7 +17,7 @@ pub struct Model {
     pub capacity: i32,
     #[sea_orm(column_type = "Text")]
     pub usage_notes: String,
-    pub is_active: bool,
+    pub status: String,
     pub created_at: DateTime,
     #[sea_orm(has_many)]
     #[serde(skip)]

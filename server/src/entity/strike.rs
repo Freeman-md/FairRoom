@@ -13,7 +13,7 @@ pub struct Model {
     pub given_by: Uuid,
     #[sea_orm(column_type = "Text")]
     pub reason: String,
-    pub revoked_at: DateTime,
+    pub revoked_at: Option<DateTime>,
     pub created_at: DateTime,
     #[sea_orm(
         belongs_to,
