@@ -12,7 +12,7 @@ use sea_orm::{
 use uuid::Uuid;
 
 use crate::entity::*;
-use crate::routes::helper::status_to_str;
+use crate::routes::helper::{fmt_wall, status_to_str};
 use crate::routes::models::*;
 
 const DEFAULT_PAGE_SIZE: u64 = 20;
@@ -215,8 +215,8 @@ pub async fn get_room_bookings(
             room_id: b.room_id.to_string(),
             room_code: room.room_code.clone(),
             room_name: room.room_name.clone(),
-            starts_at: b.starts_at.and_utc().to_rfc3339(),
-            ends_at: b.ends_at.and_utc().to_rfc3339(),
+            starts_at: fmt_wall(b.starts_at),
+            ends_at: fmt_wall(b.ends_at),
             status: status_to_str(&b.status).to_string(),
             checked_in: b.checked_in,
             created_at: b.created_at.and_utc().to_rfc3339(),
