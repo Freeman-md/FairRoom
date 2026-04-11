@@ -7,7 +7,6 @@ FairRoom is a room booking system with a Rust/Axum backend and a React/Vite fron
 ### Frontend
 
 - Production: https://fortunate-recreation-production.up.railway.app
-- Current preview deployment: https://skill-deploy-754r5fscz0-codex-agent-deploys.vercel.app
 
 ### Backend
 
