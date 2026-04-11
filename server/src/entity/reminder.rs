@@ -14,10 +14,10 @@ pub struct Model {
     pub booking_id: Uuid,
     pub channel: ChannelEnum,
     pub scheduled_for: DateTime,
-    pub sent_at: DateTime,
+    pub sent_at: Option<DateTime>,
     pub status: StatEnum,
-    #[sea_orm(column_type = "Text")]
-    pub failure_reason: String,
+    #[sea_orm(column_type = "Text", nullable)]
+    pub failure_reason: Option<String>,
     pub created_at: DateTime,
     #[sea_orm(
         belongs_to,

@@ -521,6 +521,27 @@ pub struct AdminUserStrikesResponse {
     pub items: Vec<StrikeResponse>,
 }
 
+// ── Reminder responses ────────────────────────────────────────────────────────
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReminderResponse {
+    pub id: String,
+    pub booking_id: String,
+    pub channel: String,
+    pub scheduled_for: String,
+    pub sent_at: Option<String>,
+    pub status: String,
+    pub failure_reason: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Serialize)]
+pub struct ReminderListResponse {
+    pub items: Vec<ReminderResponse>,
+    pub total: usize,
+}
+
 // ── Analytics ─────────────────────────────────────────────────────────────────
 
 #[derive(Deserialize, Default)]

@@ -152,6 +152,7 @@ pub async fn get_account_activities(
     }
 
     for s in &strikes {
+        // Strike issued event
         items.push(AccountActivityItem {
             id: s.id.to_string(),
             activity_type: "strike_recorded".to_string(),
@@ -162,6 +163,20 @@ pub async fn get_account_activities(
             source_entity_type: "strike".to_string(),
             source_entity_id: s.id.to_string(),
         });
+
+        // Strike revoked event (only if revoked)
+        if let Some(revoked_at) = s.revoked_at {
+            items.push(AccountActivityItem {
+                id: format!("{}-revoked", s.id),
+                activity_type: "strike_revoked".to_string(),
+                title: "Strike revoked".to_string(),
+                description: format!("A previously recorded strike has been revoked: {}", s.reason),
+                occurred_at: revoked_at.and_utc().to_rfc3339(),
+                status: "completed".to_string(),
+                source_entity_type: "strike".to_string(),
+                source_entity_id: s.id.to_string(),
+            });
+        }
     }
 
     // Sort by occurredAt descending (most recent first)
@@ -244,11 +259,34 @@ pub async fn get_my_bookings(
     }))
 }
 
+fn reminder_to_response(r: reminder::Model) -> ReminderResponse {
+    let channel = match r.channel {
+        crate::entity::sea_orm_active_enums::ChannelEnum::Email => "email",
+        crate::entity::sea_orm_active_enums::ChannelEnum::Push => "push",
+        crate::entity::sea_orm_active_enums::ChannelEnum::Sms => "sms",
+    };
+    let status = match r.status {
+        crate::entity::sea_orm_active_enums::StatEnum::Scheduled => "scheduled",
+        crate::entity::sea_orm_active_enums::StatEnum::Delivered => "delivered",
+        crate::entity::sea_orm_active_enums::StatEnum::Failed => "failed",
+    };
+    ReminderResponse {
+        id: r.id.to_string(),
+        booking_id: r.booking_id.to_string(),
+        channel: channel.to_string(),
+        scheduled_for: r.scheduled_for.and_utc().to_rfc3339(),
+        sent_at: r.sent_at.map(|dt| dt.and_utc().to_rfc3339()),
+        status: status.to_string(),
+        failure_reason: r.failure_reason,
+        created_at: r.created_at.and_utc().to_rfc3339(),
+    }
+}
+
 pub async fn get_my_reminders(
     State(db): State<DatabaseConnection>,
     auth: AuthUser,
     Query(params): Query<ReminderQuery>,
-) -> ApiResult<Json<Vec<reminder::Model>>> {
+) -> ApiResult<Json<ReminderListResponse>> {
     let limit = params.page_size.unwrap_or(DEFAULT_PAGE_SIZE);
 
     let booking_ids: Vec<Uuid> = booking::Entity::find()
@@ -262,25 +300,27 @@ pub async fn get_my_reminders(
 
     if let Some(specific_booking_id) = params.booking_id {
         if !booking_ids.contains(&specific_booking_id) {
-            return Ok(Json(vec![]));
+            return Ok(Json(ReminderListResponse { items: vec![], total: 0 }));
         }
     }
 
     let mut query = reminder::Entity::find().filter(reminder::Column::BookingId.is_in(booking_ids));
 
-    if let Some(status) = params.status {
-        query = query.filter(reminder::Column::Status.eq(status));
+    if let Some(ref status) = params.status {
+        query = query.filter(reminder::Column::Status.eq(status.as_str()));
     }
     if let Some(booking_id) = params.booking_id {
         query = query.filter(reminder::Column::BookingId.eq(booking_id));
     }
 
     let reminders = query
-        .order_by_desc(reminder::Column::CreatedAt)
+        .order_by_asc(reminder::Column::ScheduledFor)
         .limit(limit)
         .all(&db)
         .await
         .map_err(internal_error)?;
 
-    Ok(Json(reminders))
+    let items: Vec<ReminderResponse> = reminders.into_iter().map(reminder_to_response).collect();
+    let total = items.len();
+    Ok(Json(ReminderListResponse { items, total }))
 }

@@ -10,7 +10,7 @@ use sea_orm::{
 };
 use uuid::Uuid;
 
-use crate::entity::sea_orm_active_enums::StatusEnum;
+use crate::entity::sea_orm_active_enums::{ChannelEnum, StatEnum, StatusEnum};
 use crate::entity::*;
 use crate::routes::helper::status_to_str;
 use crate::routes::me::SUSPENSION_THRESHOLD;
@@ -170,6 +170,24 @@ pub async fn create_booking(
     };
 
     let b = new_booking.insert(&db).await.map_err(internal_error)?;
+
+    // Auto-create reminder records at 30 min and 15 min before the booking starts.
+    // These are documented in the DB for future delivery (email/push/SMS) - not sent yet.
+    for minutes_before in [30i64, 15i64] {
+        let scheduled_for = starts_at - chrono::Duration::minutes(minutes_before);
+        let rem = reminder::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            booking_id: Set(b.id),
+            channel: Set(ChannelEnum::Email),
+            scheduled_for: Set(scheduled_for),
+            sent_at: Set(None),
+            status: Set(StatEnum::Scheduled),
+            failure_reason: Set(None),
+            created_at: Set(now),
+        };
+        rem.insert(&db).await.map_err(internal_error)?;
+    }
+
     Ok((StatusCode::CREATED, Json(booking_response(&b, &room))))
 }
 
