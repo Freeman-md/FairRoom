@@ -423,7 +423,7 @@ pub async fn cancel_booking(
         return Err(api_error(
             StatusCode::BAD_REQUEST,
             "VALIDATION_ERROR",
-            "Request validation failed.",
+            "Request failed, Only active bookings can be cancelled.",
             Some(
                 serde_json::json!({ "field": "status", "reason": "Only active bookings can be cancelled" }),
             ),
