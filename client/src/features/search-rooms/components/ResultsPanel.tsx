@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import Empty from "@/components/ui/empty";
 import ErrorBlock from "@/components/ui/error";
 import { Separator } from "@/components/ui/separator";
-import { ChevronLeft, ChevronRight, Search, X } from "@/lib/icons";
+import { ChevronLeft, ChevronRight, Menu, Search, X, iconProps } from "@/lib/icons";
 import { useSearchRoomsContext } from "../context";
 import type { ActiveChip } from "../hooks/useSearchRooms";
 import RoomCard from "./RoomCard";
@@ -12,7 +12,11 @@ import RoomCardSkeleton from "./RoomCardSkeleton";
 
 const SKELETON_COUNT = 6;
 
-export default function ResultsPanel() {
+type ResultsPanelProps = {
+  onOpenFilters?: () => void;
+};
+
+export default function ResultsPanel({ onOpenFilters }: ResultsPanelProps) {
   const {
     rooms,
     totalRooms,
@@ -61,7 +65,17 @@ export default function ResultsPanel() {
           </p>
         </div>
 
-        <div className="relative w-full sm:w-auto sm:min-w-[280px] sm:max-w-sm">
+        <div className="flex w-full items-center gap-3 sm:w-auto">
+          <Button
+            variant="outline"
+            className="h-10 shrink-0 gap-2 lg:hidden"
+            onClick={onOpenFilters}
+          >
+            <Menu {...iconProps} aria-hidden="true" />
+            Filters
+          </Button>
+
+          <div className="relative flex-1 sm:w-auto sm:min-w-[280px] sm:max-w-sm">
           <Search
             size={15}
             strokeWidth={1.5}
@@ -75,6 +89,7 @@ export default function ResultsPanel() {
             placeholder="Search room name or ID..."
             className="h-10 w-full rounded-input border border-input bg-surface pl-9 pr-3 text-sm text-content placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
+          </div>
         </div>
       </div>
 
@@ -113,7 +128,7 @@ export default function ResultsPanel() {
       )}
 
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-heading text-xl font-semibold text-content">
+        <h2 className="font-heading text-lg font-semibold leading-tight text-content sm:text-xl">
           {isLoading ? "Loading…" : `Showing ${totalRooms} ${totalRooms === 1 ? "Room" : "Rooms"}`}
         </h2>
 
