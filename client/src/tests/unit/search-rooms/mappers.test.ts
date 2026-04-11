@@ -20,8 +20,8 @@ describe("search rooms mappers", () => {
     expect(params.amenityIds).toEqual(["projector"]);
     expect(params.page).toBe(3);
     expect(params.pageSize).toBe(12);
-    expect(typeof params.startsAt).toBe("string");
-    expect(typeof params.endsAt).toBe("string");
+    expect(params.startsAt).toBe("2026-04-10T09:00:00");
+    expect(params.endsAt).toBe("2026-04-10T17:00:00");
     expect(params.startsAt && params.endsAt && params.startsAt < params.endsAt).toBe(true);
   });
 

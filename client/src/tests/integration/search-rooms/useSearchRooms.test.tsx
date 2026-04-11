@@ -10,6 +10,7 @@ vi.mock("@/features/search-rooms/roomSearchService", () => ({
 describe("useSearchRooms", () => {
   afterEach(() => {
     vi.clearAllMocks();
+    vi.useRealTimers();
   });
 
   it("applies filters only when requested and still refetches on page size change", async () => {
@@ -66,6 +67,13 @@ describe("useSearchRooms", () => {
     expect(result.current.draftFilters.capacity).toBe(12);
 
     act(() => {
+      result.current.patchFilters({ timeRange: [8, 16] });
+    });
+
+    expect(result.current.draftFilters.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(fetchRooms).toHaveBeenCalledTimes(1);
+
+    act(() => {
       result.current.applyFilters();
     });
 
@@ -75,6 +83,8 @@ describe("useSearchRooms", () => {
           page: 1,
           pageSize: 12,
           minCapacity: 12,
+          startsAt: "2026-04-11T08:00:00",
+          endsAt: "2026-04-11T16:00:00",
         }),
       );
     });

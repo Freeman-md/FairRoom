@@ -19,6 +19,14 @@ const DEFAULT_FILTERS: Filters = {
   amenityIds: [],
 };
 
+function getTodayInputValue() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 type State = {
   appliedFilters: Filters;
   draftFilters: Filters;
@@ -76,7 +84,14 @@ function cloneFilters(filters: Filters): Filters {
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case "PATCH_DRAFT_FILTERS":
-      return { ...state, draftFilters: { ...state.draftFilters, ...action.payload } };
+      return {
+        ...state,
+        draftFilters: {
+          ...state.draftFilters,
+          ...action.payload,
+          ...(action.payload.timeRange && !state.draftFilters.date ? { date: getTodayInputValue() } : {}),
+        },
+      };
 
     case "RESET_DRAFT_FILTERS":
       return { ...state, draftFilters: cloneFilters(DEFAULT_FILTERS) };
