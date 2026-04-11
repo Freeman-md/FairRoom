@@ -31,6 +31,7 @@ describe("room details mappers", () => {
         },
       ],
       "2026-04-10",
+      new Date("2026-04-10T09:30:00.000Z"),
     );
 
     const tenAm = slots.find((slot) => slot.time === "10:00 AM");
@@ -40,5 +41,13 @@ describe("room details mappers", () => {
     expect(tenAm?.status).toBe("reserved");
     expect(elevenAm?.status).toBe("reserved");
     expect(twoPm?.status).toBe("available");
+  });
+
+  it("marks earlier slots as past on the current day", () => {
+    const slots = deriveTimeSlots([], "2026-04-10", new Date("2026-04-10T13:30:00.000Z"));
+
+    expect(slots.find((slot) => slot.time === "01:00 PM")?.status).toBe("past");
+    expect(slots.find((slot) => slot.time === "02:00 PM")?.status).toBe("past");
+    expect(slots.find((slot) => slot.time === "03:00 PM")?.status).toBe("available");
   });
 });

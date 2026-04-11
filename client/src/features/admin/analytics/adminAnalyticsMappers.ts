@@ -2,7 +2,13 @@ import { Clock, TrendingUp, Users } from "@/lib/icons";
 
 import type { AdminRoomUsageResponse } from "@/api/contracts";
 
-import type { AnalyticsBarItem, AnalyticsKpi } from "./content";
+import type {
+  AnalyticsBarItem,
+  AnalyticsInsightsSection,
+  AnalyticsKpi,
+  AnalyticsPerformanceRow,
+  AnalyticsPerformanceSection,
+} from "./content";
 
 export type AnalyticsUsageChart = {
   title: string;
@@ -15,17 +21,11 @@ export type AnalyticsUsageChart = {
 export type AdminAnalyticsViewModel = {
   kpis: AnalyticsKpi[];
   chart: AnalyticsUsageChart;
+  performance: AnalyticsPerformanceSection;
+  insights: AnalyticsInsightsSection;
   hasData: boolean;
 };
 
-function formatHours(hours: number) {
-  const rounded = Math.round(hours * 10) / 10;
-  return `${rounded.toFixed(rounded % 1 === 0 ? 0 : 1)} Hours`;
-}
-
-function formatPercent(value: number) {
-  return `${Math.round(value * 10) / 10}%`;
-}
 
 function buildYAxis(maxValue: number): number[] {
   const upperBound = Math.max(Math.ceil(maxValue / 10) * 10, 10);
@@ -36,69 +36,74 @@ function buildYAxis(maxValue: number): number[] {
   );
 }
 
-function getTopItem(items: AdminRoomUsageResponse["items"]) {
-  return items.reduce<AdminRoomUsageResponse["items"][number] | null>((best, current) => {
+function getTopItem(items: AdminRoomUsageResponse["usageDistribution"]) {
+  return items.reduce<AdminRoomUsageResponse["usageDistribution"][number] | null>((best, current) => {
     if (!best) return current;
-    if (current.totalBookings > best.totalBookings) return current;
-    if (current.totalBookings === best.totalBookings && current.totalHours > best.totalHours) {
-      return current;
-    }
+    if (current.hours > best.hours) return current;
     return best;
   }, null);
+}
+
+function getMaxUsageHours(items: AdminRoomUsageResponse["usageDistribution"]) {
+  return items.reduce((max, item) => Math.max(max, item.hours), 0);
 }
 
 export function buildAdminAnalyticsViewModel(
   response: AdminRoomUsageResponse,
 ): AdminAnalyticsViewModel {
-  const totalBookings = response.items.reduce((sum, item) => sum + item.totalBookings, 0);
-  const totalHours = response.items.reduce((sum, item) => sum + item.totalHours, 0);
-  const totalNoShows = response.items.reduce((sum, item) => sum + item.noShowCount, 0);
-  const popularRoom = getTopItem(response.items);
-  const averageDuration = totalBookings > 0 ? totalHours / totalBookings : 0;
-  const noShowRate = totalBookings > 0 ? (totalNoShows / totalBookings) * 100 : 0;
-  const maxHours = Math.max(...response.items.map((item) => item.totalHours), 0);
+  const topRoom = getTopItem(response.usageDistribution);
+  const maxHours = getMaxUsageHours(response.usageDistribution);
 
   const kpis: AnalyticsKpi[] = [
     {
       label: "Most Popular Room",
-      value: popularRoom?.key ?? "No data",
-      note: popularRoom
-        ? `${popularRoom.totalBookings} bookings this period`
-        : "No room usage has been recorded yet.",
+      value: response.summary.mostPopularRoom.value,
+      note: response.summary.mostPopularRoom.text,
       icon: TrendingUp,
     },
     {
       label: "Avg Booking Duration",
-      value: formatHours(averageDuration),
-      note:
-        totalBookings > 0
-          ? "Derived from total booking hours across all rooms."
-          : "No booking activity is available yet.",
+      value: response.summary.averageBookingDuration.value,
+      note: response.summary.averageBookingDuration.text,
       icon: Clock,
     },
     {
       label: "No-Show Rate",
-      value: formatPercent(noShowRate),
-      note:
-        totalBookings > 0
-          ? `${totalNoShows} no-shows across ${totalBookings} bookings.`
-          : "No show rate will appear once bookings exist.",
+      value: response.summary.noShowRate.value,
+      note: response.summary.noShowRate.text,
       icon: Users,
     },
   ];
+
+  const performanceRows: AnalyticsPerformanceRow[] = response.performanceBreakdown.map((item) => ({
+    roomIdentifier: item.roomIdentifier,
+    totalUsageHours: item.totalUsageHours,
+    occupancyPercentage: item.occupancyPercentage,
+    efficiency: item.efficiency,
+  }));
 
   return {
     kpis,
     chart: {
       title: "Usage Distribution",
-      subtitle: "Total booking hours per room for the current period.",
+      subtitle: "Booking hours per room for the current period.",
       groupLabel: `Group by: ${response.groupBy}`,
-      bars: response.items.map((item) => ({
-        room: item.key,
-        hours: item.totalHours,
+      bars: response.usageDistribution.map((item) => ({
+        room: item.room,
+        hours: item.hours,
       })),
       yAxis: buildYAxis(maxHours),
     },
-    hasData: response.items.length > 0,
+    performance: {
+      title: "Room Performance",
+      inlineNote: topRoom ? `${topRoom.room} leads the current period` : "No usage recorded yet",
+      rows: performanceRows,
+    },
+    insights: {
+      title: "System Insights",
+      recommendation: response.insights.recommendation,
+      anomalies: response.insights.anomalies,
+    },
+    hasData: response.usageDistribution.length > 0 || response.performanceBreakdown.length > 0,
   };
 }

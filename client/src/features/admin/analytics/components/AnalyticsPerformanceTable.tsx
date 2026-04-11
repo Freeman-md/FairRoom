@@ -27,6 +27,11 @@ const EFFICIENCY_CLASSES: Record<AnalyticsPerformanceRow["efficiency"], string> 
   Low: "bg-muted text-muted-foreground",
 };
 
+function formatHours(hours: number) {
+  const rounded = Math.round(hours * 10) / 10;
+  return `${rounded.toFixed(rounded % 1 === 0 ? 0 : 1)} Hours`;
+}
+
 export default function AnalyticsPerformanceTable({
   performance,
 }: AnalyticsPerformanceTableProps) {
@@ -72,8 +77,12 @@ export default function AnalyticsPerformanceTable({
                 <TableCell className="px-0 py-4 font-medium text-content">
                   {row.roomIdentifier}
                 </TableCell>
-                <TableCell className="px-0 py-4 text-muted-foreground">{row.totalUsage}</TableCell>
-                <TableCell className="px-0 py-4 text-muted-foreground">{row.occupancyPct}%</TableCell>
+                <TableCell className="px-0 py-4 text-muted-foreground">
+                  {formatHours(row.totalUsageHours)}
+                </TableCell>
+                <TableCell className="px-0 py-4 text-muted-foreground">
+                  {row.occupancyPercentage}%
+                </TableCell>
                 <TableCell className="px-0 py-4">
                   <Badge
                     variant="outline"

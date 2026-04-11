@@ -15,6 +15,14 @@ function formatDisplayDate(iso: string): string {
   return d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", year: "numeric" });
 }
 
+function toIsoDate(day: Date): string {
+  return [
+    day.getFullYear(),
+    String(day.getMonth() + 1).padStart(2, "0"),
+    String(day.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
 export default function RoomAvailabilityPanel() {
   const {
     room,
@@ -28,16 +36,14 @@ export default function RoomAvailabilityPanel() {
   } = useRoomDetailsContext();
 
   const calendarDate = new Date(date + "T00:00:00");
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
 
   const handleCalendarSelect = (day: Date | undefined) => {
-    if (day) {
-      const iso = [
-        day.getFullYear(),
-        String(day.getMonth() + 1).padStart(2, "0"),
-        String(day.getDate()).padStart(2, "0"),
-      ].join("-");
-      setDate(iso);
-    }
+    if (!day) return;
+    if (day < todayStart) return;
+
+    setDate(toIsoDate(day));
   };
 
   return (
@@ -65,6 +71,7 @@ export default function RoomAvailabilityPanel() {
               selected={calendarDate}
               onSelect={handleCalendarSelect}
               defaultMonth={calendarDate}
+              disabled={{ before: todayStart }}
             />
           </PopoverContent>
         </Popover>

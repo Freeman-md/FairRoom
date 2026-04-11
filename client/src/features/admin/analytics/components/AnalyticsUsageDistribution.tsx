@@ -18,6 +18,7 @@ export default function AnalyticsUsageDistribution({
   chart,
 }: AnalyticsUsageDistributionProps) {
   const maxHours = Math.max(...chart.bars.map((item) => item.hours), 1);
+  const columns = Math.max(chart.bars.length, 1);
 
   return (
     <Card className="border-0 bg-surface shadow-none ring-1 ring-border/40">
@@ -47,7 +48,10 @@ export default function AnalyticsUsageDistribution({
 
           <div className="relative">
             <div className="absolute inset-x-0 top-0 h-px bg-border/40" />
-            <div className="grid h-[240px] grid-cols-7 items-end gap-3 border-b border-border/40 pb-6">
+            <div
+              className="grid h-[240px] items-end gap-3 border-b border-border/40 pb-6"
+              style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+            >
               {chart.bars.map((bar) => {
                 const height = `${(bar.hours / maxHours) * 186}px`;
 

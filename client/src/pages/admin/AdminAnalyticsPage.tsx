@@ -3,6 +3,8 @@ import ErrorBlock from "@/components/ui/error";
 import Loading from "@/components/ui/loading";
 
 import AnalyticsKpiGrid from "@/features/admin/analytics/components/AnalyticsKpiGrid";
+import AnalyticsPerformanceTable from "@/features/admin/analytics/components/AnalyticsPerformanceTable";
+import AnalyticsSystemInsights from "@/features/admin/analytics/components/AnalyticsSystemInsights";
 import AnalyticsUsageDistribution from "@/features/admin/analytics/components/AnalyticsUsageDistribution";
 import { analyticsHeader } from "@/features/admin/analytics/content";
 import { useAdminAnalytics } from "@/features/admin/analytics/hooks/useAdminAnalytics";
@@ -27,13 +29,10 @@ function AdminAnalyticsPage() {
         <>
           <AnalyticsKpiGrid items={data.kpis} />
           <AnalyticsUsageDistribution chart={data.chart} />
-
-          {/*
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-            <AnalyticsPerformanceTable performance={analyticsPerformance} />
-            <AnalyticsSystemInsights insights={analyticsInsights} />
+            <AnalyticsPerformanceTable performance={data.performance} />
+            <AnalyticsSystemInsights insights={data.insights} />
           </div>
-          */}
         </>
       ) : (
         <Empty

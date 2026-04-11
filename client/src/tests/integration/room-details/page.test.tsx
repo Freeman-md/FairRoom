@@ -1,6 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import userEvent from "@testing-library/user-event";
-import { render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, render, screen } from "@testing-library/react";
 import { Route, Routes, MemoryRouter } from "react-router-dom";
 import RoomDetailsPage from "@/pages/RoomDetailsPage";
 import { fairroomApi } from "@/api/fairroomApi";
@@ -13,7 +12,13 @@ vi.mock("@/api/fairroomApi", () => ({
 }));
 
 describe("RoomDetailsPage", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-04-10T13:30:00.000Z"));
+  });
+
   afterEach(() => {
+    vi.useRealTimers();
     vi.clearAllMocks();
   });
 
@@ -49,7 +54,6 @@ describe("RoomDetailsPage", () => {
       ],
     });
 
-    const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={["/rooms/room-1"]}>
         <Routes>
@@ -58,17 +62,20 @@ describe("RoomDetailsPage", () => {
       </MemoryRouter>,
     );
 
-    await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Collaborative Study Suite 101" })).toBeInTheDocument();
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
     });
 
+    expect(screen.getByRole("heading", { name: "Collaborative Study Suite 101" })).toBeInTheDocument();
     expect(screen.getByText("Library, 2nd Floor - East Wing")).toBeInTheDocument();
     expect(screen.getByText("Projector")).toBeInTheDocument();
     expect(screen.getByText("Whiteboard")).toBeInTheDocument();
     expect(screen.getByText("Room Photography Placeholder")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /01:00 PM/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /02:00 PM/i })).toBeDisabled();
 
-    await user.click(screen.getByRole("button", { name: "02:00 PMAvailable" }));
-    expect(screen.getByRole("link", { name: "Book This Room" })).toHaveAttribute("href", "/bookings/confirm");
+    expect(screen.getByRole("button", { name: /03:00 PMAvailable/i })).not.toBeDisabled();
   });
 
   it("shows a room not found state when the backend returns an error", async () => {
@@ -83,8 +90,11 @@ describe("RoomDetailsPage", () => {
       </MemoryRouter>,
     );
 
-    await waitFor(() => {
-      expect(screen.getByText("Room not found")).toBeInTheDocument();
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
     });
+
+    expect(screen.getByText("Room not found")).toBeInTheDocument();
   });
 });

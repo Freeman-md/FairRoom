@@ -84,18 +84,48 @@ export interface AdminBookingListResponse {
   total: number;
 }
 
-export interface AdminRoomUsageItem {
-  key: string;
-  totalBookings: number;
-  totalHours: number;
-  noShowCount: number;
+export interface AdminRoomUsageSummaryStat {
+  value: string;
+  text: string;
+}
+
+export interface AdminRoomUsageSummary {
+  mostPopularRoom: AdminRoomUsageSummaryStat;
+  averageBookingDuration: AdminRoomUsageSummaryStat;
+  noShowRate: AdminRoomUsageSummaryStat;
+}
+
+export interface AdminRoomUsageDistributionItem {
+  room: string;
+  hours: number;
+}
+
+export interface AdminRoomUsagePerformanceItem {
+  roomIdentifier: string;
+  totalUsageHours: number;
+  occupancyPercentage: number;
+  efficiency: "High" | "Medium" | "Low";
+}
+
+export interface AdminRoomUsageInsightItem {
+  title: string;
+  description: string;
+  meta?: string;
+}
+
+export interface AdminRoomUsageInsights {
+  recommendation: AdminRoomUsageInsightItem;
+  anomalies: AdminRoomUsageInsightItem[];
 }
 
 export interface AdminRoomUsageResponse {
   groupBy: string;
   startsAt?: string | null;
   endsAt?: string | null;
-  items: AdminRoomUsageItem[];
+  summary: AdminRoomUsageSummary;
+  usageDistribution: AdminRoomUsageDistributionItem[];
+  performanceBreakdown: AdminRoomUsagePerformanceItem[];
+  insights: AdminRoomUsageInsights;
 }
 
 export interface AdminUserItem {

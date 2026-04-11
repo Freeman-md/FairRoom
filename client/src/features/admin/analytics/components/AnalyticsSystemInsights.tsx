@@ -58,26 +58,32 @@ export default function AnalyticsSystemInsights({
           <div className="mt-4 flex flex-col gap-3">
             <p className="text-sm font-semibold text-content">Usage Anomalies</p>
             <div className="flex flex-col gap-3">
-              {insights.anomalies.map((item) => (
-                <div key={item.title} className="flex items-start gap-3 rounded-card bg-muted/20 px-3 py-3">
-                  <div className="mt-0.5 flex size-7 items-center justify-center rounded-full bg-surface text-muted-foreground ring-1 ring-border/40">
-                    <Clock {...iconProps} aria-hidden="true" />
-                  </div>
+              {insights.anomalies.length > 0 ? (
+                insights.anomalies.map((item) => (
+                  <div key={item.title} className="flex items-start gap-3 rounded-card bg-muted/20 px-3 py-3">
+                    <div className="mt-0.5 flex size-7 items-center justify-center rounded-full bg-surface text-muted-foreground ring-1 ring-border/40">
+                      <Clock {...iconProps} aria-hidden="true" />
+                    </div>
 
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-content">{item.title}</p>
-                    <p className="text-sm text-muted-foreground">{item.description}</p>
-                    {item.meta ? (
-                      <Badge
-                        variant="outline"
-                        className="rounded-full border-border bg-surface px-2 py-0.5 text-[11px] font-semibold text-muted-foreground shadow-none"
-                      >
-                        {item.meta}
-                      </Badge>
-                    ) : null}
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-content">{item.title}</p>
+                      <p className="text-sm text-muted-foreground">{item.description}</p>
+                      {item.meta ? (
+                        <Badge
+                          variant="outline"
+                          className="rounded-full border-border bg-surface px-2 py-0.5 text-[11px] font-semibold text-muted-foreground shadow-none"
+                        >
+                          {item.meta}
+                        </Badge>
+                      ) : null}
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="rounded-card bg-muted/20 px-3 py-3 text-sm text-muted-foreground">
+                  No anomalies detected for the selected period.
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </CardContent>

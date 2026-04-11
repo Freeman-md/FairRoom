@@ -4,7 +4,14 @@ import type { TimeSlot } from "@/features/search-rooms/components/SlotButton";
 import { loadRoomDetails } from "../roomDetailsService";
 import { deriveTimeSlots } from "../mappers";
 
-const todayISO = () => new Date().toISOString().slice(0, 10);
+function todayISO() {
+  const now = new Date();
+  return [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+  ].join("-");
+}
 
 type State = {
   room: Room | null;

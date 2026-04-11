@@ -20,14 +20,40 @@ describe("admin analytics service", () => {
       groupBy: "room",
       startsAt: null,
       endsAt: null,
-      items: [],
+      summary: {
+        mostPopularRoom: { value: "RM-B201", text: "8 bookings" },
+        averageBookingDuration: { value: "1.1h", text: "65 min avg per booking" },
+        noShowRate: { value: "3.6%", text: "1 of 28 bookings were no-shows" },
+      },
+      usageDistribution: [],
+      performanceBreakdown: [],
+      insights: {
+        recommendation: {
+          title: "No insight available",
+          description: "No analytics data has been recorded yet.",
+        },
+        anomalies: [],
+      },
     });
 
     await expect(loadAdminRoomUsage()).resolves.toEqual({
       groupBy: "room",
       startsAt: null,
       endsAt: null,
-      items: [],
+      summary: {
+        mostPopularRoom: { value: "RM-B201", text: "8 bookings" },
+        averageBookingDuration: { value: "1.1h", text: "65 min avg per booking" },
+        noShowRate: { value: "3.6%", text: "1 of 28 bookings were no-shows" },
+      },
+      usageDistribution: [],
+      performanceBreakdown: [],
+      insights: {
+        recommendation: {
+          title: "No insight available",
+          description: "No analytics data has been recorded yet.",
+        },
+        anomalies: [],
+      },
     });
 
     expect(fairroomApi.getAdminRoomUsage).toHaveBeenCalledWith({
