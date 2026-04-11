@@ -10,6 +10,7 @@ mod m20260409_000001_add_booking_time_slot_trigger;
 mod m20260410_000001_room_status_and_amenities;
 mod m20260410_000002_fix_strike_revoked_at;
 mod m20260410_000003_nullable_strike_revoked_at;
+mod m20260411_000001_nullable_reminder_fields;
 
 pub struct Migrator;
 
@@ -27,6 +28,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260410_000001_room_status_and_amenities::Migration),
             Box::new(m20260410_000002_fix_strike_revoked_at::Migration),
             Box::new(m20260410_000003_nullable_strike_revoked_at::Migration),
+            Box::new(m20260411_000001_nullable_reminder_fields::Migration),
         ]
     }
 }
