@@ -60,6 +60,13 @@ pub async fn auto_complete_past_bookings(db: &DatabaseConnection) -> Result<(), 
     Ok(())
 }
 
+/// Format a wall-clock NaiveDateTime as a bare ISO 8601 string (no timezone suffix).
+/// Returning times without "+00:00" prevents JavaScript clients from applying a
+/// local-timezone offset on display — the value shown is always the stored slot time.
+pub fn fmt_wall(dt: chrono::NaiveDateTime) -> String {
+    dt.format("%Y-%m-%dT%H:%M:%S").to_string()
+}
+
 /// Converts a booking StatusEnum to its canonical string value.
 pub fn status_to_str(status: &crate::entity::sea_orm_active_enums::StatusEnum) -> &'static str {
     use crate::entity::sea_orm_active_enums::StatusEnum;

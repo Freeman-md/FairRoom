@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 use crate::entity::sea_orm_active_enums::StatusEnum;
 use crate::entity::*;
-use crate::routes::helper::{auto_complete_past_bookings, status_to_str};
+use crate::routes::helper::{auto_complete_past_bookings, fmt_wall, status_to_str};
 use crate::routes::models::*;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -251,8 +251,8 @@ pub async fn admin_get_bookings(
                     name: room.room_name.clone(),
                     location: room.location.clone(),
                 },
-                starts_at: b.starts_at.and_utc().to_rfc3339(),
-                ends_at: b.ends_at.and_utc().to_rfc3339(),
+                starts_at: fmt_wall(b.starts_at),
+                ends_at: fmt_wall(b.ends_at),
                 status: status_to_str(&b.status).to_string(),
                 checked_in: b.checked_in,
                 created_at: b.created_at.and_utc().to_rfc3339(),
@@ -327,8 +327,8 @@ pub async fn admin_get_booking(
             name: room.room_name,
             location: room.location,
         },
-        starts_at: booking.starts_at.and_utc().to_rfc3339(),
-        ends_at: booking.ends_at.and_utc().to_rfc3339(),
+        starts_at: fmt_wall(booking.starts_at),
+        ends_at: fmt_wall(booking.ends_at),
         status: status_to_str(&booking.status).to_string(),
         checked_in: booking.checked_in,
         created_at: booking.created_at.and_utc().to_rfc3339(),
@@ -1023,8 +1023,8 @@ pub async fn admin_get_room_usage(
 
     Ok(Json(RoomUsageAnalyticsResponse {
         group_by,
-        starts_at: params.starts_at.map(|dt| dt.and_utc().to_rfc3339()),
-        ends_at: params.ends_at.map(|dt| dt.and_utc().to_rfc3339()),
+        starts_at: params.starts_at.map(fmt_wall),
+        ends_at: params.ends_at.map(fmt_wall),
         summary: RoomUsageSummary {
             most_popular_room,
             average_booking_duration,

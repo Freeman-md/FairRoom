@@ -12,7 +12,7 @@ use uuid::Uuid;
 
 use crate::entity::sea_orm_active_enums::{ChannelEnum, StatEnum, StatusEnum};
 use crate::entity::*;
-use crate::routes::helper::status_to_str;
+use crate::routes::helper::{fmt_wall, status_to_str};
 use crate::routes::me::SUSPENSION_THRESHOLD;
 use crate::routes::models::*;
 
@@ -22,8 +22,8 @@ fn booking_response(b: &booking::Model, room: &room::Model) -> BookingResponse {
         room_id: b.room_id.to_string(),
         room_code: room.room_code.clone(),
         room_name: room.room_name.clone(),
-        starts_at: b.starts_at.and_utc().to_rfc3339(),
-        ends_at: b.ends_at.and_utc().to_rfc3339(),
+        starts_at: fmt_wall(b.starts_at),
+        ends_at: fmt_wall(b.ends_at),
         status: status_to_str(&b.status).to_string(),
         checked_in: b.checked_in,
         created_at: b.created_at.and_utc().to_rfc3339(),
@@ -158,8 +158,8 @@ pub async fn create_booking(
             "The selected time range overlaps an existing active booking.",
             Some(serde_json::json!({
                 "roomId": payload.room_id.to_string(),
-                "startsAt": starts_at.and_utc().to_rfc3339(),
-                "endsAt": ends_at.and_utc().to_rfc3339()
+                "startsAt": fmt_wall(starts_at),
+                "endsAt": fmt_wall(ends_at)
             })),
         ));
     }
@@ -267,8 +267,8 @@ pub async fn get_booking(
             name: room.room_name,
             location: room.location,
         },
-        starts_at: b.starts_at.and_utc().to_rfc3339(),
-        ends_at: b.ends_at.and_utc().to_rfc3339(),
+        starts_at: fmt_wall(b.starts_at),
+        ends_at: fmt_wall(b.ends_at),
         status: status_to_str(&b.status).to_string(),
         checked_in: b.checked_in,
         created_at: b.created_at.and_utc().to_rfc3339(),
@@ -350,8 +350,8 @@ pub async fn update_booking(
             "The selected time range overlaps an existing active booking.",
             Some(serde_json::json!({
                 "roomId": b.room_id.to_string(),
-                "startsAt": new_starts_at.and_utc().to_rfc3339(),
-                "endsAt": new_ends_at.and_utc().to_rfc3339()
+                "startsAt": fmt_wall(new_starts_at),
+                "endsAt": fmt_wall(new_ends_at)
             })),
         ));
     }
@@ -423,7 +423,7 @@ pub async fn cancel_booking(
         return Err(api_error(
             StatusCode::BAD_REQUEST,
             "VALIDATION_ERROR",
-            "Request validation failed.",
+            "Request failed, Only active bookings can be cancelled.",
             Some(
                 serde_json::json!({ "field": "status", "reason": "Only active bookings can be cancelled" }),
             ),

@@ -12,7 +12,7 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::entity::*;
-use crate::routes::helper::{auto_complete_past_bookings, status_to_str, user_to_response};
+use crate::routes::helper::{auto_complete_past_bookings, fmt_wall, status_to_str, user_to_response};
 use crate::routes::models::*;
 
 const DEFAULT_PAGE_SIZE: u64 = 20;
@@ -241,8 +241,8 @@ pub async fn get_my_bookings(
                 room_id: b.room_id.to_string(),
                 room_code: room.room_code.clone(),
                 room_name: room.room_name.clone(),
-                starts_at: b.starts_at.and_utc().to_rfc3339(),
-                ends_at: b.ends_at.and_utc().to_rfc3339(),
+                starts_at: fmt_wall(b.starts_at),
+                ends_at: fmt_wall(b.ends_at),
                 status: status_to_str(&b.status).to_string(),
                 checked_in: b.checked_in,
                 created_at: b.created_at.and_utc().to_rfc3339(),
@@ -274,7 +274,7 @@ fn reminder_to_response(r: reminder::Model) -> ReminderResponse {
         id: r.id.to_string(),
         booking_id: r.booking_id.to_string(),
         channel: channel.to_string(),
-        scheduled_for: r.scheduled_for.and_utc().to_rfc3339(),
+        scheduled_for: fmt_wall(r.scheduled_for),
         sent_at: r.sent_at.map(|dt| dt.and_utc().to_rfc3339()),
         status: status.to_string(),
         failure_reason: r.failure_reason,
